@@ -1,26 +1,42 @@
 // import YTlogo from "/youtube-svgrepo-com.svg";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import HamburgerIcon from "/hamburger-menu-more-svgrepo-com.svg";
 import SearchIcon from "/search-svgrepo-com.svg";
 import { toggleMenu } from "../utils/appSlice";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { YOUTUBE_SEARCH_API } from "../utils/constants";
+import { cacheResults } from "../utils/searchSlice";
 
 const Head = () => {
   const [searchQuery, setsearchQuery] = useState("");
-  const [suggestions,setsuggestions] = useState([]);
-  const [showsuggestions,setshowsuggestions]=useState(false);
+  const [suggestions, setsuggestions] = useState([]);
+  const [showsuggestions, setshowsuggestions] = useState(false);
+  const searchCache = useSelector((store) => store.search);
+
   const dispatch = useDispatch();
   const toggleMenuHandler = () => {
     dispatch(toggleMenu());
   };
+  /**
+   * searchCache ={
+   *         "iphone": ["iphone 13","iphone 16"]
+   * }
+   * searchQuery= iphone
+   *
+   */
+
   useEffect(() => {
     //api call
     //make an api call after every keypress
     //but if the diffrence between every keypress is morethan 200ms decline the api call
     const timer = setTimeout(() => {
-      getQuerySuggestions();
+      console.log(searchCache + "-->"+ searchQuery)
+      if (searchCache[searchQuery]) {
+        setsuggestions(searchCache[searchQuery]);
+      } else {
+        getQuerySuggestions();
+      }
     }, 200);
     return () => {
       clearTimeout(timer);
@@ -30,8 +46,13 @@ const Head = () => {
   const getQuerySuggestions = async () => {
     const data = await fetch(`${YOUTUBE_SEARCH_API}${searchQuery}`);
     const json = await data.json();
-    // console.log(json[1])
-    setsuggestions(json[1])
+    setsuggestions(json[1]);
+    //updating our cache
+    dispatch(
+      cacheResults({
+        [searchQuery]: json[1],
+      })
+    );
   };
   return (
     <>
@@ -58,8 +79,8 @@ const Head = () => {
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setsearchQuery(e.target.value)}
-              onFocus={()=>setshowsuggestions(true)}
-              onBlur={()=>setshowsuggestions(false)}
+              onFocus={() => setshowsuggestions(true)}
+              onBlur={() => setshowsuggestions(false)}
             />
             <button>
               <img
@@ -68,12 +89,22 @@ const Head = () => {
               />
             </button>
           </div>
-          {showsuggestions && <div className="absolute top-12 py-2 px-5 w-[36%] bg-white shadow-lg rounded-lg border border-gray-100">
-            <ul>
-              {suggestions.map(s => <li key={s} className="py-0.5 px-1 hover:bg-gray-100 rounded-sm"> {s}</li>)}
-            </ul>
-          </div>}
-          
+          {showsuggestions && (
+            <div className="absolute top-12 py-2 px-5 w-[36%] bg-white shadow-lg rounded-lg border border-gray-100">
+              <ul>
+                {suggestions.map((s) => (
+                  <li
+                    key={s}
+                    className="py-0.5 px-1 hover:bg-gray-100 rounded-sm"
+                  >
+                    {" "}
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div>
             <img
               className="h-10 w-10 cursor-pointer"
