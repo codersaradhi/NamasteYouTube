@@ -31,7 +31,6 @@ const Head = () => {
     //make an api call after every keypress
     //but if the diffrence between every keypress is morethan 200ms decline the api call
     const timer = setTimeout(() => {
-      console.log(searchCache + "-->"+ searchQuery)
       if (searchCache[searchQuery]) {
         setsuggestions(searchCache[searchQuery]);
       } else {
